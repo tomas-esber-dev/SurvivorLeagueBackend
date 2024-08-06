@@ -121,7 +121,7 @@ app.get('/fetchCurrentMatchday', async (req, res) => {
         });
         // Extract current matchday from the response
         const currentMatchday = response.data.currentSeason.currentMatchday;
-        res.status(200).send(`Current matchday: ${currentMatchday}`);
+        res.status(200).json({ currentMatchday: currentMatchday });
     } catch (error) {
         res.status(500).send('Error fetching current matchday: ' + error.message);
     }
