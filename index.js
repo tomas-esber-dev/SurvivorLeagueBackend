@@ -141,6 +141,26 @@ app.get('/fetchCurrentMatchdayResults', async (req, res) => {
     }
 });
 
+/**
+ * ENDPOINT: Fetch all teams in the BPL this year from the Football Data API.
+ */
+app.get('/fetchTeams', async (req, res) => {
+    try {
+        const response = await axios.get('https://api.football-data.org/v4/competitions/PL/teams', {
+            headers: {
+                'X-Auth-Token': '84672de1d2e44717af5067329c586396'
+            }
+        });
+        const teams = response.data.teams.map(team => ({
+            team: team.id, 
+            name: team.name
+        }));
+        res.status(200).json(teams);
+    } catch (error) {
+        res.status(500).send('Error fetching teams: ' + error.message);
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
 });
