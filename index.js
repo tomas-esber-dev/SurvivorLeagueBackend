@@ -1,18 +1,35 @@
 const express = require('express');
-const admin = require('firebase-admin');
+// const admin = require('firebase-admin');
+const { admin, db } = require('./firebase');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const cors = require('cors');
-const serviceAccount = require('./serviceAccountKey.json');
+// const serviceAccount = require('./serviceAccountKey.json');
+
+const getCurrentMatchday = require('./getCurrentMatchday');
+const getMatchdayResults = require('./getMatchdayResults');
+
+// Import the cron job logic
+const cron = require('node-cron');
+// cronJob function is imported from jobLogic.js
+const { cronJob } = require('./jobLogic');
+/**
+ * Schedule the cron job to run every day at midnight. We are checking to see if the matchday has changed.
+ * If it has, then we want to fetch the match results for the new matchday. Regardless, we want to update
+ * the user's lives according to the match results and their predictions.
+ */
+// cron.schedule('0 0 * * *', cronJob);
+// Run the cron job every minute for testing purposes
+cron.schedule('* * * * *', cronJob);
 
 const app = express();
 const port = 3000;
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
+// admin.initializeApp({
+//     credential: admin.credential.cert(serviceAccount)
+// });
 
-const db = admin.firestore();
+// const db = admin.firestore();
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -43,34 +60,6 @@ app.post('/makePredictions', async (req, res) => {
         res.status(500).send('Error saving prediction' + error.message);;
     }
 });
-
-/**
- * Function to fetch the current matchday from the Football Data API.
- * @returns the current matchday from the Football Data API.
- */
-const getCurrentMatchday = async () => {
-    const response = await axios.get('https://api.football-data.org/v4/competitions/PL', {
-        headers: {
-            'X-Auth-Token': '84672de1d2e44717af5067329c586396'
-        }
-    });
-    return response.data.currentSeason.currentMatchday;   
-};
-
-/**
- * Function to fetch match results for a given matchday from the Football Data API.
- * @param {*} matchday the desired matchday to fetch match results for.
- * @returns match results for a given matchday from the Football Data API.
- */
-const getMatchdayResults = async (matchday) => {
-    // Make a GET request to the Football Data API
-    const response = await axios.get(`https://api.football-data.org/v4/competitions/PL/matches?matchday=${matchday}`, {
-        headers: {
-            'X-Auth-Token': '84672de1d2e44717af5067329c586396'
-        }
-    });
-    return response.data.matches;
-};
 
 /**
  * Function to save match results to Firestore database.
@@ -142,20 +131,42 @@ app.get('/fetchCurrentMatchdayResults', async (req, res) => {
 });
 
 /**
- * ENDPOINT: Fetch all teams in the BPL this year from the Football Data API.
+ * ENDPOINT: Fetch all teams in the BPL this year from the Football Data API. But, first, 
+ * check if the teams are already in the Firestore database.
  */
 app.get('/fetchTeams', async (req, res) => {
     try {
-        const response = await axios.get('https://api.football-data.org/v4/competitions/PL/teams', {
-            headers: {
-                'X-Auth-Token': '84672de1d2e44717af5067329c586396'
-            }
+        // Fetch all teams from Firestore database
+        const teamsSnapshot = await db.collection('teams').get();
+        let teamsList = [];
+        // Add each team to the teamsList array
+        teamsSnapshot.forEach(doc => {
+            teamsList.push(doc.data());
         });
-        const teams = response.data.teams.map(team => ({
-            team: team.id, 
-            name: team.name
-        }));
-        res.status(200).json(teams);
+
+        // If no teams are found in the Firestore database, fetch them from the Football Data API
+        if (teamsList.length === 0) {
+            const response = await axios.get('https://api.football-data.org/v4/competitions/PL/teams', {
+                headers: {
+                    'X-Auth-Token': '84672de1d2e44717af5067329c586396'
+                }
+            });
+            // Map the response data to the teamsList array
+            teamsList = response.data.teams.map(team => ({
+                team: team.id, 
+                name: team.name
+            }));
+        }
+        // Save the teams to Firestore database
+        const batch = db.batch();
+        // For each team in the teamsList array, create a reference to the team document in Firestore
+        teamsList.forEach(team => {
+            const teamRef = db.collection('teams').doc(team.name.toString());
+            batch.set(teamRef, team);
+        });
+        // Commit the batch write to Firestore database
+        await batch.commit();
+        res.status(200).json(teamsList);
     } catch (error) {
         res.status(500).send('Error fetching teams: ' + error.message);
     }
