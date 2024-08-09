@@ -38,6 +38,7 @@ const updateUserLives = async (matchday) => {
 
             // If the user has not made a prediction for the current matchday, assign a random prediction
             if (predictionsSnapshot.empty) {
+                // TODO: only assign if the deadline to make a prediction has passed
                 predictionData = await assignRandomPrediction(userId, leagueId, matchday);
             } else {
                 predictionData = predictionsSnapshot.docs[0].data();
@@ -70,6 +71,7 @@ const updateUserLives = async (matchday) => {
 
             // If the user's prediction is incorrect, decrement their lives by 1
             if (!correctPrediction) {
+                // TODO: only decrement once for the same matchday
                 await userLeagueRef.update({ lives: admin.firestore.FieldValue.increment(-1) });
                 console.log(`User ${userId} lost a life`);
             }
