@@ -24,7 +24,8 @@ const updateUserLives = async (matchday) => {
 
             // If the user document does not exist, create it with default 3 lives
             if (!userLeagueSnapshot.exists) {
-                await userLeagueRef.set({ lives: 3 });
+                // assuming users can only join league with 3 lives and before the 1st matchday
+                await userLeagueRef.set({ lives: 3, lastMatchdayUpdated: 0 });
             }
 
             // Fetch the user's prediction for the current matchday
@@ -38,7 +39,7 @@ const updateUserLives = async (matchday) => {
 
             // If the user has not made a prediction for the current matchday, assign a random prediction
             if (predictionsSnapshot.empty) {
-                // TODO: only assign if the deadline to make a prediction has passed
+                // only assign if the deadline to make a prediction has passed
                 predictionData = await assignRandomPrediction(userId, leagueId, matchday);
             } else {
                 predictionData = predictionsSnapshot.docs[0].data();
@@ -51,29 +52,26 @@ const updateUserLives = async (matchday) => {
                 .where('matchday', '==', matchday)
                 .get();
 
-            let correctPrediction = false;
-
             // Loop through each match result for the current matchday
             for (const matchDoc of matchesSnapshot.docs) {
                 const matchData = matchDoc.data();
-                // Check if the match has been played and if the user's prediction is correct
-                if (matchData.status === 'FINISHED') {
+                // Check if the match has been played and if the user has not already been updated for this matchday
+                if (matchData.status === 'FINISHED' && userLeagueSnapshot.data().lastMatchdayUpdated < matchday) {
+                    // Check if the user's prediction is correct (either selected a winning team or a draw)
                     if ((matchData.homeTeam === predictedTeam && matchData.winner === 'HOME_TEAM') ||
                         (matchData.awayTeam === predictedTeam && matchData.winner === 'AWAY_TEAM') ||
                         (matchData.homeTeam === predictedTeam && matchData.winner === 'DRAW') ||
                         (matchData.awayTeam === predictedTeam && matchData.winner === 'DRAW')) {
-                        correctPrediction = true;
                         console.log(`User ${userId} correctly predicted the match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
+                        await userLeagueRef.update({ lastMatchdayUpdated: matchday });
+                        break;
+                    } else if (matchData.homeTeam === predictedTeam || matchData.awayTeam === predictedTeam) { // If the user's prediction is incorrect
+                        console.log(`User ${userId} incorrectly predicted the match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
+                        await userLeagueRef.update({ lives: admin.firestore.FieldValue.increment(-1), lastMatchdayUpdated: matchday });
+                        console.log(`User ${userId} lost a life`);
                         break;
                     }
                 }
-            }
-
-            // If the user's prediction is incorrect, decrement their lives by 1
-            if (!correctPrediction) {
-                // TODO: only decrement once for the same matchday
-                await userLeagueRef.update({ lives: admin.firestore.FieldValue.increment(-1) });
-                console.log(`User ${userId} lost a life`);
             }
         }
     }

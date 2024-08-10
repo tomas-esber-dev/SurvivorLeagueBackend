@@ -6,6 +6,29 @@ const removeFinishedMatches = require('./removeFinishedMatches');
 const db = admin.firestore();
 
 /**
+ * Function to check if predictions should be locked for a given matchday.
+ * Uses the same logic as the frontend function. Could refactor in future.
+ * @param {*} matchday the matchday to check if predictions should be locked.
+ * @returns true if predictions should be locked, false otherwise.
+ */
+const shouldLockPredictions = async (matchday) => {
+    try {
+        const matchesRef = db.collection('matches');
+        const matchesSnapshot = await matchesRef.where('matchday', '==', matchday).get();
+        console.log('Checking if predictions should be locked for matchday', matchday);
+        const currentTime = new Date();
+        const firstMatchStartTime = matchesSnapshot.docs
+            .map(doc => new Date(doc.data().utcDate))
+            .sort((a, b) => a - b)[0];
+        console.log('First match start time:', firstMatchStartTime);
+        return currentTime >= firstMatchStartTime;
+    } catch (error) {
+        console.error('Error checking if predictions should be locked:', error);
+        return false;
+    }
+};
+
+/**
  * Function to fetch and save matchday results to Firestore and update user lives.
  */
 const fetchAndSaveMatchdayResults = async () => {
@@ -27,10 +50,14 @@ const fetchAndSaveMatchdayResults = async () => {
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
     }
-
-    // Update user lives based on the matchday results and their prediction
-    await updateUserLives(currentMatchday);
-    console.log('Matchday results saved and user lives updated');
+    console.log('Matchday results saved to Firestore');
+    // Check if predictions should be locked for the current matchday
+    if (await shouldLockPredictions(currentMatchday)) {
+        console.log('Predictions are locked for matchday', currentMatchday);
+        // Update user lives for the current matchday
+        await updateUserLives(currentMatchday);
+        console.log('Matchday results saved and user lives updated');
+    }
 };
 
 /**
@@ -38,7 +65,8 @@ const fetchAndSaveMatchdayResults = async () => {
  */
 const cronJob = async () => {
     console.log('Running daily job to fetch and save matchday results...');
-
+    const testResult = await shouldLockPredictions(1);  // Replace with a valid matchday
+    console.log('Test Result:', testResult);
     // Fetch the previous matchday from Firestore
     const previousMatchdayDoc = await db.collection('metadata').doc('previousMatchday').get();
     // If the document doesn't exist, set the previous matchday to 1 (the first matchday)
@@ -59,4 +87,4 @@ const cronJob = async () => {
     }
 }
 
-module.exports = { fetchAndSaveMatchdayResults, cronJob };
+module.exports = { fetchAndSaveMatchdayResults, cronJob, shouldLockPredictions };
