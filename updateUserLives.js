@@ -45,6 +45,8 @@ const updateUserLives = async (matchday) => {
                 predictionData = predictionsSnapshot.docs[0].data();
             }
 
+            let predictionOutcome = "DEFAULT";
+
             const predictedTeam = predictionData.teamId;
 
             // Fetch the match results for the current matchday
@@ -62,10 +64,12 @@ const updateUserLives = async (matchday) => {
                         (matchData.awayTeam === predictedTeam && matchData.winner === 'AWAY_TEAM') ||
                         (matchData.homeTeam === predictedTeam && matchData.winner === 'DRAW') ||
                         (matchData.awayTeam === predictedTeam && matchData.winner === 'DRAW')) {
+                        predictionOutcome = "CORRECT";
                         console.log(`User ${userId} correctly predicted the match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
                         await userLeagueRef.update({ lastMatchdayUpdated: matchday });
                         break;
                     } else if (matchData.homeTeam === predictedTeam || matchData.awayTeam === predictedTeam) { // If the user's prediction is incorrect
+                        predictionOutcome = "INCORRECT";
                         console.log(`User ${userId} incorrectly predicted the match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
                         await userLeagueRef.update({ lives: admin.firestore.FieldValue.increment(-1), lastMatchdayUpdated: matchday });
                         console.log(`User ${userId} lost a life`);
@@ -73,6 +77,7 @@ const updateUserLives = async (matchday) => {
                     }
                 }
             }
+            await predictionDocRef.update({ predictionOutcome });
         }
     }
 };

@@ -53,6 +53,7 @@ app.post('/makePredictions', async (req, res) => {
             leagueId: leagueId,
             matchday: matchday,
             teamId: teamId,
+            predictionOutcome: "DEFAULT",
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
         res.status(200).send('Prediction successfully saved');
