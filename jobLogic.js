@@ -21,6 +21,8 @@ const shouldLockPredictions = async (matchday) => {
             .map(doc => new Date(doc.data().utcDate))
             .sort((a, b) => a - b)[0];
         console.log('First match start time:', firstMatchStartTime);
+        console.log('Current time:', currentTime);
+        console.log('Predictions should be locked:', currentTime >= firstMatchStartTime);
         return currentTime >= firstMatchStartTime;
     } catch (error) {
         console.error('Error checking if predictions should be locked:', error);
@@ -53,6 +55,7 @@ const fetchAndSaveMatchdayResults = async () => {
     console.log('Matchday results saved to Firestore');
     // Check if predictions should be locked for the current matchday
     if (await shouldLockPredictions(currentMatchday)) {
+        console.log('Predictions should be locked for matchday', currentMatchday);
         console.log('Predictions are locked for matchday', currentMatchday);
         // Update user lives for the current matchday
         await updateUserLives(currentMatchday);
@@ -65,10 +68,8 @@ const fetchAndSaveMatchdayResults = async () => {
  */
 const cronJob = async () => {
     console.log('Running daily job to fetch and save matchday results...');
-    const testResult = await shouldLockPredictions(1);  // Replace with a valid matchday
-    console.log('Test Result:', testResult);
-    // Fetch the previous matchday from Firestore
-    const previousMatchdayDoc = await db.collection('metadata').doc('previousMatchday').get();
+    // Fetch the current matchday from Firestore (which could be the previous matchday)
+    const previousMatchdayDoc = await db.collection('metadata').doc('currentMatchday').get();
     // If the document doesn't exist, set the previous matchday to 1 (the first matchday)
     const previousMatchday = previousMatchdayDoc.exists ? previousMatchdayDoc.data().value : 1;
     console.log('Previous matchday:', previousMatchday);

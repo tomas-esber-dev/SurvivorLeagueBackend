@@ -60,16 +60,21 @@ const assignRandomPrediction = async (userId, leagueId, matchday) => {
 
     // Create a prediction object
     const prediction = {
+        id: null,
         userId: userId,
         leagueId: leagueId,
         matchday: matchday,
         teamId: randomTeam,
+        predictionOutcome: "DEFAULT",
         timestamp: admin.firestore.FieldValue.serverTimestamp()
     };
 
     // Save the prediction to Firestore database
-    const predictionDoc = await db.collection('predictions').add(prediction);
-    return prediction;
+    const predictionDocRef = await db.collection('predictions').add(prediction);
+    return {
+        prediction: prediction,
+        predictionDocRef: predictionDocRef
+    };
 };
 
 module.exports = assignRandomPrediction;

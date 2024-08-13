@@ -18,9 +18,9 @@ const { cronJob } = require('./jobLogic');
  * If it has, then we want to fetch the match results for the new matchday. Regardless, we want to update
  * the user's lives according to the match results and their predictions.
  */
-cron.schedule('0 0 * * *', cronJob);
+// cron.schedule('0 0 * * *', cronJob);
 // Run the cron job every minute for testing purposes
-// cron.schedule('* * * * *', cronJob);
+cron.schedule('* * * * *', cronJob);
 
 const app = express();
 const port = 3000;
