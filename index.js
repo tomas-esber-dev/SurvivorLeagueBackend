@@ -9,21 +9,33 @@ const cors = require('cors');
 const getCurrentMatchday = require('./getCurrentMatchday');
 const getMatchdayResults = require('./getMatchdayResults');
 
-// Import the cron job logic
-const cron = require('node-cron');
-// cronJob function is imported from jobLogic.js
-const { cronJob } = require('./jobLogic');
-/**
- * Schedule the cron job to run every day at midnight. We are checking to see if the matchday has changed.
- * If it has, then we want to fetch the match results for the new matchday. Regardless, we want to update
- * the user's lives according to the match results and their predictions.
- */
-// cron.schedule('0 0 * * *', cronJob);
-// Run the cron job every minute for testing purposes
-cron.schedule('* * * * *', cronJob);
-
+// set up express app
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+
+// // Import the cron job logic
+// const cron = require('node-cron');
+// // cronJob function is imported from jobLogic.js
+// const { cronJob } = require('./jobLogic');
+// /**
+//  * Schedule the cron job to run every day at midnight. We are checking to see if the matchday has changed.
+//  * If it has, then we want to fetch the match results for the new matchday. Regardless, we want to update
+//  * the user's lives according to the match results and their predictions.
+//  */
+// // cron.schedule('0 0 * * *', cronJob);
+// // Run the cron job every minute for testing purposes
+// cron.schedule('* * * * *', cronJob);
+
+// Logic for Google Cloud Scheduler
+const { cronJob } = require('./jobLogic');
+exports.scheduledCronJob = async (req, res) => {
+    try {
+        await cronJob();
+        res.status(200).send('Cron job successfully completed');
+    } catch (error) {
+        res.status(500).send('Error running cron job: ' + error.message);
+    }
+};
 
 // admin.initializeApp({
 //     credential: admin.credential.cert(serviceAccount)
@@ -106,7 +118,7 @@ app.get('/fetchCurrentMatchday', async (req, res) => {
     try {
         const response = await axios.get('https://api.football-data.org/v4/competitions/PL', {
             headers: {
-                'X-Auth-Token': '84672de1d2e44717af5067329c586396'
+                'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY
             }
         });
         // Extract current matchday from the response
@@ -149,7 +161,7 @@ app.get('/fetchTeams', async (req, res) => {
         if (teamsList.length === 0) {
             const response = await axios.get('https://api.football-data.org/v4/competitions/PL/teams', {
                 headers: {
-                    'X-Auth-Token': '84672de1d2e44717af5067329c586396'
+                    'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY
                 }
             });
             // Map the response data to the teamsList array

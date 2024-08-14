@@ -10,7 +10,7 @@ const getMatchdayResults = async (matchday) => {
         // Make a GET request to the Football Data API
         const response = await axios.get(`https://api.football-data.org/v4/competitions/PL/matches?matchday=${matchday}`, {
             headers: {
-                'X-Auth-Token': '84672de1d2e44717af5067329c586396'
+                'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY
             }
         });
         return response.data.matches;

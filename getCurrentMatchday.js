@@ -9,7 +9,7 @@ const getCurrentMatchday = async () => {
         console.log('Fetching current matchday...');
         const response = await axios.get('https://api.football-data.org/v4/competitions/PL', {
             headers: {
-                'X-Auth-Token': '84672de1d2e44717af5067329c586396'
+                'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY
             }
         });
         console.log('Current matchday from API:', response.data.currentSeason.currentMatchday);
