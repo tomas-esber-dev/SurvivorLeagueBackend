@@ -11,7 +11,7 @@ const getMatchdayResults = require('./getMatchdayResults');
 
 // set up express app
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 // // Import the cron job logic
 // const cron = require('node-cron');
@@ -28,14 +28,14 @@ const port = process.env.PORT || 3000;
 
 // Logic for Google Cloud Scheduler
 const { cronJob } = require('./jobLogic');
-exports.scheduledCronJob = async (req, res) => {
-    try {
-        await cronJob();
-        res.status(200).send('Cron job successfully completed');
-    } catch (error) {
-        res.status(500).send('Error running cron job: ' + error.message);
-    }
-};
+// exports.scheduledCronJob = async (req, res) => {
+//     try {
+//         await cronJob();
+//         res.status(200).send('Cron job successfully completed');
+//     } catch (error) {
+//         res.status(500).send('Error running cron job: ' + error.message);
+//     }
+// };
 
 // admin.initializeApp({
 //     credential: admin.credential.cert(serviceAccount)
@@ -45,6 +45,11 @@ exports.scheduledCronJob = async (req, res) => {
 
 app.use(cors());
 app.use(bodyParser.json());
+
+app.post('/scheduledCronJob', async (req, res) => {
+    await cronJob();
+    res.status(200).send('Cron job successfully completed');
+});
 
 /**
  *  An axios.post request is a method provided by the Axios library in JavaScript to make 

@@ -20,9 +20,9 @@ const shouldLockPredictions = async (matchday) => {
         const firstMatchStartTime = matchesSnapshot.docs
             .map(doc => new Date(doc.data().utcDate))
             .sort((a, b) => a - b)[0];
-        console.log('First match start time:', firstMatchStartTime);
-        console.log('Current time:', currentTime);
-        console.log('Predictions should be locked:', currentTime >= firstMatchStartTime);
+        // console.log('First match start time:', firstMatchStartTime);
+        // console.log('Current time:', currentTime);
+        // console.log('Predictions should be locked:', currentTime >= firstMatchStartTime);
         return currentTime >= firstMatchStartTime;
     } catch (error) {
         console.error('Error checking if predictions should be locked:', error);
@@ -55,11 +55,11 @@ const fetchAndSaveMatchdayResults = async () => {
     console.log('Matchday results saved to Firestore');
     // Check if predictions should be locked for the current matchday
     if (await shouldLockPredictions(currentMatchday)) {
-        console.log('Predictions should be locked for matchday', currentMatchday);
-        console.log('Predictions are locked for matchday', currentMatchday);
+        // console.log('Predictions should be locked for matchday', currentMatchday);
+        // console.log('Predictions are locked for matchday', currentMatchday);
         // Update user lives for the current matchday
         await updateUserLives(currentMatchday);
-        console.log('Matchday results saved and user lives updated');
+        // console.log('Matchday results saved and user lives updated');
     }
 };
 
@@ -72,13 +72,13 @@ const cronJob = async () => {
     const previousMatchdayDoc = await db.collection('metadata').doc('currentMatchday').get();
     // If the document doesn't exist, set the previous matchday to 1 (the first matchday)
     const previousMatchday = previousMatchdayDoc.exists ? previousMatchdayDoc.data().value : 1;
-    console.log('Previous matchday:', previousMatchday);
+    // console.log('Previous matchday:', previousMatchday);
     // Fetch and save matchday results
     await fetchAndSaveMatchdayResults();
     const currentMatchday = await getCurrentMatchday();
-    console.log('Current matchday:', currentMatchday);
+    // console.log('Current matchday:', currentMatchday);
     // Remove finished matches from Firestore
-    console.log('Removing finished matches from Firestore...');
+    // console.log('Removing finished matches from Firestore...');
     await removeFinishedMatches();
 
     // If the current matchday is different from the previous matchday, update the previous matchday in Firestore

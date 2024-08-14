@@ -10,14 +10,14 @@ const updateUserLives = async (matchday) => {
         const leaguesSnapshot = await db.collection('leagues').get();
         console.log('Updating user lives...');
         // Loop through each league
-        console.log('Length of leaguesSnapshot:', leaguesSnapshot.docs.length);
+        // console.log('Length of leaguesSnapshot:', leaguesSnapshot.docs.length);
         for (const leagueDoc of leaguesSnapshot.docs) {
             const leagueId = leagueDoc.id;
             const usersRef = leagueDoc.data().users;
-            console.log(`Updating lives for users in league ${leagueId}`);
+            // console.log(`Updating lives for users in league ${leagueId}`);
             // Loop through each user in the league
             for (const userRef of usersRef) {
-                console.log('Length of usersRef:', usersRef.length);
+                // console.log('Length of usersRef:', usersRef.length);
                 const userDoc = await userRef.get();
                 const userId = userDoc.id;
 
@@ -71,29 +71,29 @@ const updateUserLives = async (matchday) => {
 
                 // Loop through each match result for the current matchday
                 for (const matchDoc of matchesSnapshot.docs) {
-                    console.log('Length of matchesSnapshot:', matchesSnapshot.docs.length);
+                    // console.log('Length of matchesSnapshot:', matchesSnapshot.docs.length);
                     const matchData = matchDoc.data();
-                    console.log(`Checking match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
-                    console.log(userLeagueSnapshot.data().lastMatchdayUpdated, matchday);
-                    console.log(matchData.status, matchData.status === 'FINISHED');
+                    // console.log(`Checking match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
+                    // console.log(userLeagueSnapshot.data().lastMatchdayUpdated, matchday);
+                    // console.log(matchData.status, matchData.status === 'FINISHED');
                     // Check if the match has been played and if the user has not already been updated for this matchday
                     if (matchData.status === 'FINISHED' && userLeagueSnapshot.data().lastMatchdayUpdated < matchday) {
-                        console.log(`Match between ${matchData.homeTeam} and ${matchData.awayTeam} has been played`);
-                        console.log('Predicted team:', predictedTeam);
+                        // console.log(`Match between ${matchData.homeTeam} and ${matchData.awayTeam} has been played`);
+                        // console.log('Predicted team:', predictedTeam);
                         // Check if the user's prediction is correct (either selected a winning team or a draw)
                         if ((matchData.homeTeam === predictedTeam && matchData.winner === 'HOME_TEAM') ||
                             (matchData.awayTeam === predictedTeam && matchData.winner === 'AWAY_TEAM') ||
                             (matchData.homeTeam === predictedTeam && matchData.winner === 'DRAW') ||
                             (matchData.awayTeam === predictedTeam && matchData.winner === 'DRAW')) {
                             predictionOutcome = "CORRECT";
-                            console.log(`User ${userId} correctly predicted the match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
+                            // console.log(`User ${userId} correctly predicted the match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
                             await userLeagueRef.update({ lastMatchdayUpdated: matchday });
                             break;
                         } else if (matchData.homeTeam === predictedTeam || matchData.awayTeam === predictedTeam) { // If the user's prediction is incorrect
                             predictionOutcome = "INCORRECT";
-                            console.log(`User ${userId} incorrectly predicted the match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
+                            // console.log(`User ${userId} incorrectly predicted the match between ${matchData.homeTeam} and ${matchData.awayTeam}`);
                             await userLeagueRef.update({ lives: admin.firestore.FieldValue.increment(-1), lastMatchdayUpdated: matchday });
-                            console.log(`User ${userId} lost a life`);
+                            // console.log(`User ${userId} lost a life`);
                             break;
                         }
                     }

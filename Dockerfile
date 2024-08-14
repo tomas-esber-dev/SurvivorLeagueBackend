@@ -8,6 +8,8 @@ COPY package*.json ./
 # installs the dependencies in the container
 RUN npm install
 
+ENV HOST 0.0.0.0
+
 COPY . .
 
 EXPOSE 8080
