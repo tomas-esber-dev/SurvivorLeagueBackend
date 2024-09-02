@@ -57,7 +57,7 @@ app.post('/scheduledCronJob', async (req, res) => {
     makes it easy to send asynchronous HTTP requests to REST endpoints and perform CRUD operations.
  */
 app.post('/makePredictions', async (req, res) => {
-    const { userId, leagueId, matchday, teamId } = req.body;
+    const { userId, leagueId, matchday, teamId, username } = req.body;
 
     try {
         // Create a reference to the prediction document in Firestore
@@ -70,6 +70,7 @@ app.post('/makePredictions', async (req, res) => {
             leagueId: leagueId,
             matchday: matchday,
             teamId: teamId,
+            username: username,
             predictionOutcome: "DEFAULT",
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
